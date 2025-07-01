@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/handlers"
@@ -15,7 +16,7 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		panic("Error loading .env file")
+		fmt.Println("No .env file")
 	}
 
 	db.DbConnection()
