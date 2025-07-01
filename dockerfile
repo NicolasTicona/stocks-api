@@ -28,9 +28,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --from=builder /app/stocks-api /app/stocks-api
 COPY . .
 
+RUN apt-get -y update
+RUN apt-get -y install vim nano
+
 # Expose the port for the application
 EXPOSE 8000
-EXPOSE 26257
 
 # Command to run the application
 CMD ["./stocks-api"]

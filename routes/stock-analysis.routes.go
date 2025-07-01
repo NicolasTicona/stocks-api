@@ -66,6 +66,8 @@ func GetStockAnalysisHandler(w http.ResponseWriter, r *http.Request) {
 
 	scriptPath := filepath.Join(workingDir, "stock-analysis", "analysis.py")
 
+	fmt.Println("Executing Python script at path:", scriptPath)
+
 	out, err := exec.Command("python3", scriptPath, stock).Output()
 	if err != nil {
 		fmt.Println("Error executing Python script:", err)
