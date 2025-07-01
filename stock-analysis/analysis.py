@@ -43,19 +43,11 @@ def fetch_news(symbol):
 
     headlines = []
     if news_data:
-        for row in news_data.find_all('tr'):
-            title = row.a.text.strip()
-            headlines.append(title)
+        for row in news_data.find_all('tr')[:20]:
+            if row.a:
+                title = row.a.text.strip()
+                headlines.append(title)
     return headlines
-
-
-def get_random_subset(data, subset_size=20):
-    """
-    Returns a random subset of the given data.
-    """
-    if len(data) <= subset_size:
-        return data
-    return random.sample(data, subset_size)
 
 
 def get_news_sentiment(symbol, headlines):
@@ -85,6 +77,7 @@ def main():
     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={key}"
     data = requests.get(url).json()
 
+
     if 'Time Series (Daily)' not in data:
         print(f"Error: 'Time Series (Daily)' key not found in the API response.")
         print(f"Response: {data}")
@@ -95,14 +88,13 @@ def main():
 
     reco = moving_average_crossover(closes)
     headlines = fetch_news(symbol)
-    random_headlines = get_random_subset(headlines, subset_size=10)
-    sentiment = get_news_sentiment(symbol, random_headlines)
+    sentiment = get_news_sentiment(symbol, headlines)
 
     output = {
         "symbol": symbol,
         "moving_average_crossover": reco,
         "sentiment": sentiment,
-        "headlines": random_headlines
+        "headlines": headlines
     }
 
     print(json.dumps(output))
