@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -33,7 +34,16 @@ func main() {
 	router.HandleFunc("/test-analyze", routes.GetRedisHandler).Methods("GET")
 
 	// Add CORS middleware
-	corsOptions := handlers.AllowedOrigins([]string{"stocks-ui.vercel.app"})
+
+	var corsOptions handlers.CORSOption
+	isDev := os.Getenv("IS_DEV")
+
+	if isDev == "true" {
+		corsOptions = handlers.AllowedOrigins([]string{"http://localhost:5173"})
+	} else {
+		corsOptions = handlers.AllowedOrigins([]string{"https://stocks-ui.vercel.app"})
+	}
+
 	corsHeaders := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 	corsMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
 
