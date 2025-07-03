@@ -89,7 +89,6 @@ It searches for all the stocks in swechallenge/list endpoint and insert them in 
 ```env
 ALPHA_VANTAGE_KEY=
 OPENAI_API_KEY=
-NEWS_API_KEY=
 FINNHUB_API_KEY=
 REDIS_USERNAME=
 REDIS_HOST=

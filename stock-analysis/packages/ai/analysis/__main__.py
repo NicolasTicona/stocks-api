@@ -1,12 +1,10 @@
 from openai import OpenAI
 import os
-import json
-import sys
-import random
 from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
 import requests
+from dotenv import load_dotenv
+import json
 
 load_dotenv()
 
@@ -70,13 +68,15 @@ def get_news_sentiment(symbol, headlines):
         return f"Error analyzing sentiment: {e}"
 
 
-def main():
-    symbol = sys.argv[1]
-    key = os.getenv("ALPHA_VANTAGE_KEY")
+def main(event):
+    symbol = event.get("symbol", "AAPL")
+
+    print(f"Fetching data for symbol: {symbol}")
+
+    key = os.getenv("ALPHA_VANTAGE_API_KEY")
 
     url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={key}"
     data = requests.get(url).json()
-
 
     if 'Time Series (Daily)' not in data:
         print(f"Error: 'Time Series (Daily)' key not found in the API response.")
@@ -94,11 +94,9 @@ def main():
         "symbol": symbol,
         "moving_average_crossover": reco,
         "sentiment": sentiment,
-        "headlines": headlines
+        "news": headlines
     }
 
-    print(json.dumps(output))
+    print(json.dumps(output, indent=2))
 
-
-if __name__ == "__main__":
-    main()
+    return output

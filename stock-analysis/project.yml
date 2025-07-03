@@ -1,0 +1,21 @@
+parameters: {}
+environment: {}
+packages:
+    - name: ai
+      shared: false
+      environment: {}
+      parameters: {}
+      annotations: {}
+      functions:
+        - name: analysis
+          binary: false
+          main: ""
+          runtime: python:3.11
+          web: true
+          webSecure: false
+          parameters: {}
+          environment:
+            ALPHA_VANTAGE_KEY: "${ALPHA_VANTAGE_KEY}"
+            OPENAI_API_KEY: "${OPENAI_API_KEY}"
+          annotations: {}
+          limits: {}
