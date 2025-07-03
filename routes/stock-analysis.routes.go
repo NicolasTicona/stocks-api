@@ -1,13 +1,12 @@
 package routes
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -41,6 +40,7 @@ func GetStockAnalysisHandler(w http.ResponseWriter, r *http.Request) {
 		DB:       db,
 	})
 
+	// Check if the stock analysis is cached in Redis
 	value, err := client.Get(context.Background(), stock).Result()
 	if err == nil {
 		var cacheResult map[string]interface{}
@@ -54,41 +54,59 @@ func GetStockAnalysisHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	workingDir, err := os.Getwd()
+	apiURL := "https://faas-nyc1-2ef2e6cc.doserverless.co/api/v1/namespaces/fn-4296c404-6588-442a-9180-d58afa975070/actions/ai/analysis?blocking=true&result=true"
+	reqBody, _ := json.Marshal(map[string]string{
+		"symbol": stock,
+	})
+
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(reqBody))
 	if err != nil {
-		fmt.Println("Error getting current working directory:", err)
+		fmt.Println("Error creating HTTP request:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Failed to resolve script path",
+			"error": "Failed to create request to external analysis service",
 		})
 		return
 	}
 
-	scriptPath := filepath.Join(workingDir, "stock-analysis", "analysis.py")
+	fmt.Println("TOKEN: ", os.Getenv("CLOUD_FUNC_AI_ANALYSIS_TOKEN"))
 
-	fmt.Println("Executing Python script at path:", scriptPath)
+	req.Header.Set("Authorization", "Basic "+os.Getenv("CLOUD_FUNC_AI_ANALYSIS_TOKEN"))
+	req.Header.Set("Content-Type", "application/json")
 
-	out, err := exec.Command("python3", scriptPath, stock).Output()
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(req)
 	if err != nil {
-		fmt.Println("Error executing Python script:", err)
+		fmt.Println("Error executing HTTP request:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
-			"error": "There was an error analysing the stock",
+			"error": "Failed to call external analysis service",
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("Non-200 response from external service: %d\n", resp.StatusCode)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "External analysis service returned an error",
 		})
 		return
 	}
 
 	var result map[string]interface{}
-	err = json.Unmarshal(out, &result)
+	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
-		fmt.Println("Error parsing Python response:", err)
+		fmt.Println("Error parsing response from external service:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
-			"error": "There was an error returning the stock analysis",
+			"error": "Failed to parse response from external analysis service",
 		})
 		return
 	}
 
+	// Cache the result in Redis for 1 hour
 	resultJSON, err := json.Marshal(result)
 	if err != nil {
 		fmt.Println("Error serializing result to JSON:", err)
