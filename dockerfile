@@ -14,16 +14,6 @@ COPY . .
 # Build the Go application
 RUN go build -o stocks-api .
 
-# Set the working directory inside the container
-WORKDIR /app
-
-# Copy the built Go binary and application files
-COPY --from=builder /app/stocks-api /app/stocks-api
-COPY . .
-
-RUN apt-get -y update
-RUN apt-get -y install vim nano
-
 # Expose the port for the application
 EXPOSE 8000
 
