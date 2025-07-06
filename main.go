@@ -20,6 +20,7 @@ func main() {
 		fmt.Println("No .env file")
 	}
 
+	db.RedisConnection()
 	db.DbConnection()
 
 	db.DB.AutoMigrate(models.Stock{})

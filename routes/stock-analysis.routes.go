@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/nicolasticona/stocks-api/utils"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -23,26 +24,9 @@ func GetStockAnalysisHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := strconv.Atoi(os.Getenv("REDIS_DB"))
-	if err != nil {
-		fmt.Println("Error converting REDIS_DB to integer:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Error connecting to Redis",
-		})
-		return
-	}
-
-	client := redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS_HOST"),
-		Username: os.Getenv("REDIS_USERNAME"),
-		Password: os.Getenv("REDIS_PASSWORD"),
-		DB:       db,
-	})
-
-	// Check if the stock analysis is cached in Redis
-	value, err := client.Get(context.Background(), stock).Result()
+	value, err := utils.RedisGet(stock)
 	if err == nil {
+		println("Redis got value")
 		var cacheResult map[string]interface{}
 		err = json.Unmarshal([]byte(value), &cacheResult)
 		if err == nil {
@@ -68,8 +52,6 @@ func GetStockAnalysisHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	fmt.Println("TOKEN: ", os.Getenv("CLOUD_FUNC_AI_ANALYSIS_TOKEN"))
 
 	req.Header.Set("Authorization", "Basic "+os.Getenv("CLOUD_FUNC_AI_ANALYSIS_TOKEN"))
 	req.Header.Set("Content-Type", "application/json")
@@ -106,7 +88,6 @@ func GetStockAnalysisHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Cache the result in Redis for 1 hour
 	resultJSON, err := json.Marshal(result)
 	if err != nil {
 		fmt.Println("Error serializing result to JSON:", err)
@@ -117,12 +98,7 @@ func GetStockAnalysisHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = client.Set(context.Background(), stock, resultJSON, time.Hour).Err()
-	if err != nil {
-		fmt.Println("Error setting stock in Redis:", err)
-	}
-
-	fmt.Println("Setting stock in Redis:", stock, "with value:", string(resultJSON))
+	go utils.RedisSave(stock, resultJSON, time.Hour*12)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)

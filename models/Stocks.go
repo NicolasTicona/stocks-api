@@ -21,7 +21,8 @@ type Stock struct {
 	Time         time.Time   `gorm:"not null" json:"time"`
 	RatingScore  float64     `gorm:"not null" json:"rating_score"`
 	TargetScore  float64     `gorm:"not null" json:"target_score"`
-	CurrentQuote utils.JSONB `gorm:"type:jsonb null" json:"currentQuote,omitempty"`
+	CurrentQuote utils.JSONB `gorm:"-" json:"currentQuote,omitempty"`
+	TotalCount   int64       `gorm:"null" json:"total_count"`
 }
 
 func InsertStockRatings(items []map[string]interface{}) error {
