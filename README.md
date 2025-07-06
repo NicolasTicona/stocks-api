@@ -96,3 +96,7 @@ REDIS_PASSWORD=
 REDIS_DB=
 POSTGRES_DSN=
 IS_ENV=
+
+## Deploy Function
+
+doctl serverless deploy stock-analysis --remote-build

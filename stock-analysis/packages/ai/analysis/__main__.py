@@ -94,7 +94,7 @@ def main(event):
         "symbol": symbol,
         "moving_average_crossover": reco,
         "sentiment": sentiment,
-        "news": headlines
+        "headlines": headlines
     }
 
     print(json.dumps(output, indent=2))
