@@ -115,13 +115,13 @@ func GetStocksHandler(w http.ResponseWriter, r *http.Request) {
 				utils.RedisSave("QUOTE_"+stock.Ticker, quoteJSON, time.Hour)
 			} else {
 				stocks[i].CurrentQuote = map[string]interface{}{
-					"currentPrice":     stockQuote.CurrentPrice,
-					"change":           stockQuote.Change,
-					"changePercentage": stockQuote.ChangePercentage,
-					"high":             stockQuote.High,
-					"low":              stockQuote.Low,
-					"open":             stockQuote.Open,
-					"previousClose":    stockQuote.PreviousClose,
+					"currentPrice":     0,
+					"change":           0,
+					"changePercentage": 0,
+					"high":             0,
+					"low":              0,
+					"open":             0,
+					"previousClose":    0,
 				}
 			}
 		}(i, stock)

@@ -2,16 +2,13 @@ package routes
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/nicolasticona/stocks-api/utils"
-	"github.com/redis/go-redis/v9"
 )
 
 func GetStockAnalysisHandler(w http.ResponseWriter, r *http.Request) {
@@ -114,24 +111,7 @@ func GetRedisHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := strconv.Atoi(os.Getenv("REDIS_DB"))
-	if err != nil {
-		fmt.Println("Error converting REDIS_DB to integer:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Error connecting to Redis",
-		})
-		return
-	}
-
-	client := redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS_HOST"),
-		Username: os.Getenv("REDIS_USERNAME"),
-		Password: os.Getenv("REDIS_PASSWORD"),
-		DB:       db,
-	})
-
-	value, err := client.Get(context.Background(), stock).Result()
+	value, err := utils.RedisGet(stock)
 	if err != nil {
 		fmt.Println("Error getting stock from Redis:", err)
 		w.WriteHeader(http.StatusInternalServerError)
