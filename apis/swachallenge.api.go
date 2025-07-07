@@ -87,7 +87,7 @@ func FetchAllStockRatings() ([]map[string]interface{}, error) {
 			if okFrom && okTo {
 				ratingFromScore := ratings[ratingFrom]
 				ratingToScore := ratings[ratingTo]
-				item["rating_score"] = ratingToScore - ratingFromScore
+				item["rating_score"] = ratingToScore - (ratingToScore - ratingFromScore)
 			}
 		}
 

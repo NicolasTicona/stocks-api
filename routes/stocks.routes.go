@@ -21,6 +21,7 @@ func GetStocksHandler(w http.ResponseWriter, r *http.Request) {
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
 	filter := r.URL.Query().Get("filter")
+	sortBy := r.URL.Query().Get("sortBy")
 
 	page, err := strconv.Atoi(pageStr)
 	if err != nil {
@@ -34,7 +35,7 @@ func GetStocksHandler(w http.ResponseWriter, r *http.Request) {
 
 	offset := page * limit
 
-	cacheKey := fmt.Sprintf("STOCKS_PAGE_%d_LIMIT_%d_FILTER_%s", page, limit, filter)
+	cacheKey := fmt.Sprintf("STOCKS_PAGE_%d_LIMIT_%d_SORT_%s_FILTER_%s", page, limit, sortBy, filter)
 	cachedResponse, err := utils.RedisGet(cacheKey)
 	if err == nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -44,16 +45,29 @@ func GetStocksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows := db.DB.Raw(`
+	var sortBySql string
+
+	switch sortBy {
+	case "time":
+		sortBySql = "time DESC"
+	case "rating":
+		sortBySql = "rating_score DESC"
+	case "target":
+		sortBySql = "target_to DESC"
+	default:
+		sortBySql = "time DESC"
+	}
+
+	rows := db.DB.Raw(fmt.Sprintf(`
 		WITH total_count AS (
 			SELECT COUNT(*) AS count FROM stocks WHERE ($1 = '' OR ticker = $1)
 		)
 		SELECT *, (SELECT count FROM total_count) AS total_count
 		FROM stocks
 		WHERE ($1 = '' OR ticker = $1)
-		ORDER BY time DESC
+		ORDER BY %s
 		LIMIT $2 OFFSET $3;
-	`, filter, limit, offset).Scan(&stocks)
+	`, sortBySql), filter, limit, offset).Scan(&stocks)
 
 	if rows.Error != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -127,7 +141,7 @@ func GetStocksHandler(w http.ResponseWriter, r *http.Request) {
 	responseJSON, _ := json.Marshal(response)
 
 	if len(stocks) > 0 {
-		utils.RedisSave(cacheKey, responseJSON, time.Minute)
+		utils.RedisSave(cacheKey, responseJSON, time.Minute*5)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
