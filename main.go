@@ -9,12 +9,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/nicolasticona/stocks-api/db"
+	"github.com/nicolasticona/stocks-api/factory"
 	"github.com/nicolasticona/stocks-api/models"
 	"github.com/nicolasticona/stocks-api/routes"
 )
 
 func main() {
-
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("No .env file")
@@ -26,15 +26,18 @@ func main() {
 	db.DB.AutoMigrate(models.Stock{})
 	db.DB.AutoMigrate(models.StockRecommendation{})
 
+	// Initialize components using the factory function
+	components := factory.InitializeComponents()
+
+	// Set up the router
 	router := mux.NewRouter()
 
-	router.HandleFunc("/sync", routes.SyncDbHandler).Methods("POST")
-	router.HandleFunc("/stocks", routes.GetStocksHandler).Methods("GET")
-	router.HandleFunc("/recommendations", routes.GetRecommendationsHandler).Methods("GET")
+	router.HandleFunc("/sync", components.StocksSyncHandler.SyncDbHandler).Methods("POST")
+	router.HandleFunc("/stocks", components.StocksHandler.GetStocksHandler).Methods("GET")
+	router.HandleFunc("/recommendations", components.RecommendationsHandler.GetRecommendationsHandler).Methods("GET")
 	router.HandleFunc("/analyze", routes.GetStockAnalysisHandler).Methods("GET")
 	router.HandleFunc("/test-analyze", routes.GetRedisHandler).Methods("GET")
-
-	// Add CORS middleware
+	router.HandleFunc("/remove-redis-key", components.StocksSyncHandler.RemoveRedisKeyPattern).Methods("DELETE")
 
 	var corsOptions handlers.CORSOption
 	isDev := os.Getenv("IS_DEV")

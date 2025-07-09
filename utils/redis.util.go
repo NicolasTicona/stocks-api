@@ -29,3 +29,24 @@ func RedisGet(param string) (string, error) {
 
 	return value, err
 }
+
+func RedisDelete(key string) error {
+	searchPattern := key + "*"
+
+	var foundedRecordCount int = 0
+	iter := db.RedisClient.Scan(context.Background(), 0, searchPattern, 0).Iterator()
+	fmt.Printf("YOUR SEARCH PATTERN= %s\n", searchPattern)
+	for iter.Next(context.Background()) {
+		fmt.Printf("Deleted= %s\n", iter.Val())
+		db.RedisClient.Del(context.Background(), iter.Val())
+		foundedRecordCount++
+	}
+
+	if err := iter.Err(); err != nil {
+		return err
+	}
+
+	fmt.Printf("Deleted Count %d\n", foundedRecordCount)
+
+	return nil
+}
