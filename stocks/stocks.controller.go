@@ -39,7 +39,9 @@ func (controller *StocksController) GetStocks(w http.ResponseWriter, page uint16
 
 		err = json.Unmarshal([]byte(cachedResponse), &cachedData)
 		if err != nil {
-			return StocksResponse{}, err
+			return StocksResponse{
+				Stocks: []models.Stock{},
+			}, err
 		}
 
 		return cachedData, nil
@@ -49,18 +51,24 @@ func (controller *StocksController) GetStocks(w http.ResponseWriter, page uint16
 
 	if err != nil {
 		fmt.Printf("Failed to fetch stocks from the database: %v\n", err)
-		return StocksResponse{}, err
+		return StocksResponse{
+			Stocks: []models.Stock{},
+		}, err
 	}
 
 	if len(stocks) == 0 {
-		return StocksResponse{}, nil
+		return StocksResponse{
+			Stocks: []models.Stock{},
+		}, nil
 	}
 
 	totalStocks = stocks[0].TotalCount
 
 	if len(stocks) > 50 {
 		fmt.Printf("Warning: totalStocks is greater than 50, which may lead to performance issues.\n")
-		return StocksResponse{}, errors.New("executing query with more than 50 stocks is not allowed")
+		return StocksResponse{
+			Stocks: []models.Stock{},
+		}, errors.New("executing query with more than 50 stocks is not allowed")
 	}
 
 	var wg sync.WaitGroup
@@ -122,7 +130,9 @@ func (controller *StocksController) GetStocks(w http.ResponseWriter, page uint16
 
 	if err != nil {
 		fmt.Printf("Error marshalling response: %v\n", err)
-		return StocksResponse{}, err
+		return StocksResponse{
+			Stocks: []models.Stock{},
+		}, err
 	}
 
 	if len(stocks) > 0 {
